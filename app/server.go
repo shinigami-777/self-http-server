@@ -41,6 +41,57 @@ func handleConnection(con net.Conn){
 	request := string(buf[:n])
 	fmt.Println("Request recieved: \n",request)
 
+	var useragent string
+	useragent = "nil"
+	var host string
+	host = "nil"
+
+	// Header Parsing here
+	lines := strings.Split(request, "\r\n")
+	for _, line := range lines {
+		fmt.Println(line)
+		if strings.HasPrefix(line, "User-Agent:") {
+			useragent = strings.TrimSpace(strings.SplitN(line, ":", 2)[1])
+		}
+		if strings.HasPrefix(line, "Host:") {
+			host = strings.TrimSpace(strings.SplitN(line, ":", 2)[1])
+		}
+	}
+	fmt.Println(host)   //Only did this for that declared and not used error
+
+	fmt.Println(lines)
+	requestLine := strings.Fields(lines[0])
+	method := requestLine[0]
+	path := requestLine[1]
+	//version :=requestLine[2]
+	//requestLine = strings.Fields(lines[1])
+	//host := requestLine[1]
+	//fmt.Println(version)
+	//fmt.Println(host)
+	//requestLine = strings.Fields(lines[2])
+	//useragent := requestLine[1]
+	//fmt.Println(useragent)
+	//fmt.Println(requestLine)  //to check the lines
+	
+
+	if method == "GET" {
+		if strings.HasPrefix(path, "/echo/"){
+			str := strings.TrimPrefix(path, "/echo/")
+			contentLength := len(str)
+			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",contentLength, str)
+			con.Write([]byte(response))
+			fmt.Println(response)
+			return;
+		}
+		if path == "/user-agent" || path == "/user-agent/"{
+			contentLength := len(useragent)
+			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",contentLength, useragent)
+			con.Write([]byte(response))
+			fmt.Println(response)
+			return;
+		}
+	}
+
 	//Checking if it is valid
 	if strings.Contains(request,"GET / ") {
 		response := "HTTP/1.1 200 OK\r\n\r\n"
