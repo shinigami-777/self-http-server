@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"io"
 )
 
 func main() {
@@ -89,6 +90,34 @@ func handleConnection(con net.Conn){
 			con.Write([]byte(response))
 			fmt.Println(response)
 			return;
+		}
+		if strings.HasPrefix(path,"/files/"){
+			filename := path[len("/files/"):]
+			fmt.Println("filename is %s",filename)
+			file, err := os.Open(filename)
+			if err != nil {
+			// File not found or other error
+				response := "HTTP/1.1 404 Not Found\r\n\r\n"
+				fmt.Println(err)
+				con.Write([]byte(response))
+				return
+			}
+			defer file.Close()
+			
+			// Get file info for Content-Length
+			stat, err := file.Stat()
+			if err != nil {
+				response := "HTTP/1.1 500 Internal Server Error\r\n\r\n"
+				con.Write([]byte(response))
+				return
+			}
+			// Send HTTP 200 OK response
+			response := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Disposition: attachment; filename=%s\r\nContent-Length: %d\r\n\r\n", filename, stat.Size())
+			con.Write([]byte(response))
+
+			// Send the file content
+			io.Copy(con, file)
+			return
 		}
 	}
 
